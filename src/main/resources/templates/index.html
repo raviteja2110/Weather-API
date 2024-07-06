@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Weather App</title>
+    <link rel="stylesheet" type="text/css" href="/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="weather-container">
+    <form id="weatherForm">
+        <div class="search-bar">
+            <input type="text" id="cityInput" placeholder="Enter city" required>
+            <button type="submit">🔍</button>
+        </div>
+    </form>
+    <div id="weatherCard" class="weather-card">
+        <h2 id="cityName" class="city-name" th:text="${defaultWeather?.city}">City Name</h2>
+        <div class="weather-icon">
+            <img id="weatherIcon" th:src="${defaultWeather != null ? 'http://openweathermap.org/img/wn/' + defaultWeather.iconCode + '@2x.png' : ''}" alt="Weather Icon">
+        </div>
+        <h1 id="temperature" class="temperature" th:text="${defaultWeather != null ? #numbers.formatDecimal(defaultWeather.temperature, 1, 1) + '°C' : ''}">Temperature</h1>
+        <p id="description" class="description" th:text="${defaultWeather?.description}">Description</p>
+        <div class="details">
+            <p>
+                <img src="/images/humidity.png" alt="Humidity Icon" class="detail-icon">
+                <span id="humidity" th:text="${defaultWeather != null ? defaultWeather.humidity + '%' : ''}">Humidity</span>
+            </p>
+            <p>
+                <img src="/images/wind_speed.png" alt="Wind Speed Icon" class="detail-icon">
+                <span id="windSpeed" th:text="${defaultWeather != null ? #numbers.formatDecimal(defaultWeather.windSpeed, 1, 1) + ' m/s' : ''}">Wind Speed</span>
+            </p>
+        </div>
+    </div>
+    <div id="errorMessage" th:if="${error}" th:text="${error}"></div>
+</div>
+
+<script th:inline="javascript">
+    function updateWeatherDisplay(data) {
+        document.getElementById('cityName').textContent = data.city;
+        document.getElementById('weatherIcon').src = `http://openweathermap.org/img/wn/${data.iconCode}@2x.png`;
+        document.getElementById('temperature').textContent = `${data.temperature.toFixed(1)}°C`;
+        document.getElementById('description').textContent = data.description;
+        document.getElementById('humidity').textContent = `${data.humidity}%`;
+        document.getElementById('windSpeed').textContent = `${data.windSpeed.toFixed(1)} m/s`;
+        document.getElementById('weatherCard').style.display = 'block';
+        document.getElementById('errorMessage').style.display = 'none';
+    }
+
+    document.getElementById('weatherForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const city = document.getElementById('cityInput').value;
+        fetch(`/weather?city=${encodeURIComponent(city)}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Weather data not found');
+                }
+                return response.json();
+            })
+            .then(data => {
+                updateWeatherDisplay(data);
+                document.getElementById('inlineMessage').textContent = ''; // Clear inline message
+            })
+            .catch(error => {
+                document.getElementById('errorMessage').textContent = error.message;
+                document.getElementById('errorMessage').style.display = 'block';
+                document.getElementById('weatherCard').style.display = 'none';
+                document.getElementById('inlineMessage').textContent = 'Weather data not found. Please enter a valid city name.'; // Display inline message
+            });
+    });
+</script>
+</body>
+</html>
